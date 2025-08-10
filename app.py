@@ -29,7 +29,7 @@ app.add_middleware(
 )
 def task_breakdown(task:str):
     """Breaks down a task into smaller programmable steps using Google GenAI."""
-    client = genai.Client(api_key="AIzaSyDzl72Dpq0Lx-LWyvdCgTj0zOfIekFjG9c")
+    client = genai.Client(api_key="asfd")
 
     task_breakdown_file = os.path.join('prompts', "b-2.txt")
     with open(task_breakdown_file, 'r') as f:
@@ -73,7 +73,7 @@ def write_code(breakdown:str):
 
 def iterate_code(code: str):
     """Fix code until it runs without errors using b-4.txt prompt."""
-    client = genai.Client(api_key="AIzaSyDzl72Dpq0Lx-LWyvdCgTj0zOfIekFjG9c")
+    client = genai.Client(api_key="adfs")
 
 
     max_iterations = 20
