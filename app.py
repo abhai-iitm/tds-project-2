@@ -50,7 +50,7 @@ def write_code(breakdown:str):
     with open("broken_tasks.txt", "r") as f:
         tasks = f.read()
         
-    client = genai.Client(api_key="AIzaSyDzl72Dpq0Lx-LWyvdCgTj0zOfIekFjG9c")
+    client = genai.Client(api_key="got you")
 
     file = os.path.join('prompts', "b-3.txt")
     with open(file, 'r') as f:
