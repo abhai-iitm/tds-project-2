@@ -1,41 +1,58 @@
-Here's a breakdown of the questions and a plan to address them:
+Here's a breakdown of the task and a guide to answering the questions about the highest-grossing films:
 
-**1. Variables and Parameters:**
+**1. Parameter Extraction**
 
-*   `s3_bucket_path`: `s3://indian-high-court-judgments/` (Base path for the S3 bucket)
-*   `metadata_parquet_path`: `metadata/parquet/year=*/court=*/bench=*/metadata.parquet?s3_region=ap-south-1` (Path to the parquet files containing metadata)
-*   `courts_of_interest`: All courts (For the first question) and `33_10` (For the second and third questions)
-*   `start_year`: 2019 (For the first question)
-*   `end_year`: 2022 (For the first question)
-*   `columns_of_interest`: `court`, `decision_date`, `date_of_registration`, `year` (For the analysis)
-*   `court_code`: `33_10`
-*   `image_format`: `webp` (for the base64 image)
+*   `url`: The Wikipedia URL containing the data: `https://en.wikipedia.org/wiki/List_of_highest-grossing_films`
+*   `target_year`: The year threshold for the first question: 2020
+*   `threshold_2bn`: The gross revenue threshold for the first question: $2 billion
+*   `threshold_1_5bn`: The gross revenue threshold for the second question: $1.5 billion
 
-**2. Expected Output:**
+**2. Expected Output**
 
-```json
-{
-  "Which high court disposed the most cases from 2019 - 2022?": "...",
-  "What's the regression slope of the date_of_registration - decision_date by year in the court=33_10?": "...",
-  "Plot the year and # of days of delay from the above question as a scatterplot with a regression line. Encode as a base64 data URI under 100,000 characters": "data:image/webp;base64,..."
-}
-```
+*   Question 1: JSON array of strings (e.g., `["2"]`)
+*   Question 2: JSON array of strings (e.g., `["Avatar"]`)
+*   Question 3: JSON array of strings with one floating-point number rounded to two decimal places. (e.g., `["0.85"]`)
+*   Question 4: base-64 encoded data URI for a PNG image (e.g., `"data:image/png;base64,iVBORw0KG..."`)
 
-**3. Step-by-Step Guidance:**
+**3. Step-by-step Guidance**
 
-**Question 1: Which high court disposed the most cases from 2019 - 2022?**
+**Question 1: How many $2 bn movies were released before 2020?**
 
-1.  **Data Loading and Filtering:** Load the `metadata.parquet` files from the S3 bucket, filtering by year (2019-2022). The provided DuckDB query can be adapted to include a `WHERE` clause to filter the data by year.
-2.  **Aggregation:** Group the filtered data by `court` and count the number of cases (`COUNT(*)`) for each court.
-3.  **Ordering and Selection:** Order the results in descending order based on the case count and select the court with the highest count.
+1.  **Scrape Data:** Access the table from the specified `url`. You'll need a library like `requests` (for fetching the HTML content) and `BeautifulSoup4` (for parsing and extracting data from the HTML).
+2.  **Extract Relevant Columns:** Identify the columns for "Rank", "Title", "Worldwide gross", and "Year".
+3.  **Filter Data:** Iterate through the data:
+    *   Filter for films with a "Year" value before `target_year` (2020).
+    *   Filter for films with a "Worldwide gross" value greater than or equal to `threshold_2bn` ($2 billion).  You'll likely need to clean the gross revenue data (remove currency symbols, commas, and convert to a numeric type).
+4.  **Count and Format:** Count the number of films that meet both criteria. Convert the count to a string.
+5.  **Output:** Return the count as a JSON array containing a string.
 
-**Question 2: What's the regression slope of the date\_of\_registration - decision\_date by year in the court=33\_10?**
+**Question 2: Which is the earliest film that grossed over $1.5 bn?**
 
-1.  **Data Loading and Filtering:** Load the `metadata.parquet` files from the S3 bucket, filtering by `court_code` (`33_10`) and extract the relevant columns (`date_of_registration`, `decision_date`, and `year`). Convert the date columns to the correct data type (Date) and calculate the difference between the registration and decision dates in days.
-2.  **Regression Analysis:** Using appropriate tools, perform a linear regression using `year` as the independent variable (X-axis) and the calculated date difference (in days) as the dependent variable (Y-axis). The regression slope represents the rate of change of the delay with respect to the year.
+1.  **Scrape Data:** Use the same scraping method as in Question 1.
+2.  **Extract Relevant Columns:** Same as in Question 1.
+3.  **Filter Data:**
+    *   Filter for films with a "Worldwide gross" value greater than or equal to `threshold_1_5bn` ($1.5 billion).  Clean the data first as mentioned above.
+4.  **Sort and Select:** Sort the filtered data by "Year" in ascending order. Select the film title with the earliest year.
+5.  **Output:** Return the film title as a JSON array containing a string.
 
-**Question 3: Plot the year and # of days of delay from the above question as a scatterplot with a regression line. Encode as a base64 data URI under 100,000 characters**
+**Question 3: What's the correlation between the Rank and Peak?**
 
-1.  **Data Preparation:** Retrieve the data from step 2, including the calculated delay in days and `year`.
-2.  **Plotting:** Create a scatter plot with `year` on the x-axis and the delay (in days) on the y-axis. Overlay a regression line representing the linear regression result from question 2.
-3.  **Encoding:** Encode the plot as a `webp` image and convert it to a base64 data URI, ensuring the resulting string is under 100,000 characters. Libraries like `matplotlib` and `plotly` can be used for this purpose, along with `io.BytesIO` and `base64` to handle the encoding.
+1.  **Scrape Data:** Use the same scraping method as in Question 1.
+2.  **Extract Relevant Columns:** Extract columns for "Rank" and, if present, a column for "Peak", or approximate a reasonable value. Convert these columns to numerical data types. If a "Peak" column is missing, identify a proxy value that may be useful in the calculation.
+3.  **Calculate Correlation:** Use a library like `NumPy` or `pandas` to compute the Pearson correlation coefficient between the "Rank" and the "Peak" values.
+4.  **Format:** Round the correlation coefficient to two decimal places.
+5.  **Output:** Return the correlation coefficient as a JSON array containing a string.
+
+**Question 4: Draw a scatterplot of Rank and Peak along with a dotted red regression line through it.**
+
+1.  **Scrape Data:** Use the same scraping method as in Question 1.
+2.  **Extract Relevant Columns:** Extract the columns for "Rank" and "Peak" as numerical data.
+3.  **Generate Scatterplot:**
+    *   Use a library like `matplotlib` or `seaborn` to create a scatterplot with "Rank" on the x-axis and "Peak" on the y-axis.
+4.  **Calculate Regression Line:**
+    *   Use a library like `NumPy` or `scikit-learn` to perform linear regression on the "Rank" and "Peak" data.
+    *   Calculate the parameters of the regression line (slope and intercept).
+    *   Generate the points needed to plot the regression line across the data's range.
+5.  **Plot Regression Line:** Plot the regression line on the scatterplot using a dotted red line style (e.g., `linestyle=':'`, `color='red'`).
+6.  **Encode as Base64:** Use `matplotlib` or another image processing library to save the plot to an in-memory PNG image. Convert the image data to a base-64 encoded data URI using `base64` library. Ensure the final image is under the size constraints mentioned.
+7.  **Output:** Return the base-64 encoded data URI string.
